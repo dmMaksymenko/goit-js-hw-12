@@ -4,10 +4,25 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vanilla App Template</title>
+    <title>HomeWork 11</title>
     <link rel="stylesheet" href="./css/styles.css" />
   </head>
   <body>
+    <form class="search-form" id="search-form">
+      <input
+        class="input"
+        type="text"
+        name="query"
+        autocomplete="off"
+        placeholder="Search images..."
+      />
+      <button type="submit" class="search-btn">Search</button>
+    </form>
+    <span class="loader"></span>
+    <div class="gallery" id="gallery"></div>
+    <button type="submit" class="load-more-btn" style="display: none">
+      Load More...
+    </button>
     <script type="module" src="./main.js"></script>
     <script type="module" src="./js/pixabay-api.js"></script>
     <script type="module" src="./js/render-functions.js"></script>
