@@ -51,8 +51,9 @@ document.addEventListener('DOMContentLoaded', function () {
     } catch (error) {
       loader.style.display = 'none';
       onError(`Error fetching images: ${error}`);
+    } finally {
+      e.target.elements.query.value = '';
     }
-    e.target.elements.query.value = '';
   });
 
   async function getImage(query, page = 1) {
@@ -73,15 +74,20 @@ document.addEventListener('DOMContentLoaded', function () {
     try {
       const response = await axios.get(url);
       if (!response.data) {
-        throw new Error('No data returned from th API');
+        throw new Error('No data returned from the API');
       }
       return response.data;
     } catch (error) {
+      onError(`'Error fetching images:', ${error}`);
       throw new Error(`Error fetching images: ${error.message}`);
     }
   }
 
   function checkBtnStatus() {
+    if (totalResult === 0) {
+      loadMoreBtn.style.display = 'none';
+      return;
+    }
     const maxPage = Math.ceil(totalResult / 15);
     const isLastPage = maxPage === page;
     if (isLastPage) {
@@ -132,12 +138,22 @@ document.addEventListener('DOMContentLoaded', function () {
         message:
           'Sorry, there are no images matching your search query. Please try again!',
       });
-      submitBtn.disabled = true;
+      loadMoreBtn.style.display = 'none';
       return;
     }
+
+    // if (images.length < totalResult) {
+    //   loadMoreBtn.style.display = 'block';
+    // } else {
+    //   loadMoreBtn.style.display = 'none';
+    // }
     const markup = imgsTemplate(images);
-    galleryMarkup.insertAdjacentHTML('beforeend', markup);
-    loadMoreBtn.style.display = 'block';
+    try {
+      galleryMarkup.insertAdjacentHTML('beforeend', markup);
+      totalResult += images.length;
+    } finally {
+      loader.style.display = 'none';
+    }
   }
 
   function onSuccess(message) {
@@ -163,6 +179,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   async function loadMoreImages() {
     page++;
+    loader.style.display = 'block';
     try {
       const data = await getImage(query, page);
       renderImgs(data.hits);
@@ -171,13 +188,14 @@ document.addEventListener('DOMContentLoaded', function () {
       const imageHeight =
         imageElements.length > 0 ? imageElements[0].offsetHeight : 0;
       const scrollHeight = imageHeight * 2;
-      console.log(scrollHeight);
       window.scrollBy({
         behavior: 'smooth',
         top: scrollHeight,
       });
     } catch (error) {
       onError(`Error fetching more images: ${error}`);
+    } finally {
+      loader.style.display = 'none';
     }
   }
 });
