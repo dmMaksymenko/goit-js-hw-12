@@ -1,5 +1,6 @@
 ('use strict');
 import axios from 'axios';
+
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
 
@@ -21,7 +22,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
   searchForm.elements.query.addEventListener('input', function () {
     query = this.value.trim();
-
     submitBtn.disabled = query === '';
   });
 
@@ -31,9 +31,6 @@ document.addEventListener('DOMContentLoaded', function () {
     if (query === '') {
       return;
     }
-
-    loader.style.display = 'block';
-    galleryMarkup.innerHTML = '';
     try {
       const data = await getImage(query, 1);
       loader.style.display = 'none';
@@ -55,7 +52,6 @@ document.addEventListener('DOMContentLoaded', function () {
       e.target.elements.query.value = '';
     }
   });
-
   async function getImage(query, page = 1) {
     const BASE_URL = 'https://pixabay.com/api/';
 
@@ -78,7 +74,7 @@ document.addEventListener('DOMContentLoaded', function () {
       }
       return response.data;
     } catch (error) {
-      onError(`'Error fetching images:', ${error}`);
+      // onError(`'Error fetching images:', ${error}`);
       throw new Error(`Error fetching images: ${error.message}`);
     }
   }
@@ -101,6 +97,7 @@ document.addEventListener('DOMContentLoaded', function () {
       loadMoreBtn.style.display = 'block';
     }
   }
+  loadMoreBtn.addEventListener('click', loadMoreImages);
 
   function imgTemplate({
     webformatURL,
@@ -128,6 +125,7 @@ document.addEventListener('DOMContentLoaded', function () {
   function imgsTemplate(imgs) {
     return imgs.map(imgTemplate).join('');
   }
+
   function renderImgs(images) {
     if (images.length === 0) {
       iziToast.show({
@@ -141,12 +139,6 @@ document.addEventListener('DOMContentLoaded', function () {
       loadMoreBtn.style.display = 'none';
       return;
     }
-
-    // if (images.length < totalResult) {
-    //   loadMoreBtn.style.display = 'block';
-    // } else {
-    //   loadMoreBtn.style.display = 'none';
-    // }
     const markup = imgsTemplate(images);
     try {
       galleryMarkup.insertAdjacentHTML('beforeend', markup);
@@ -155,27 +147,6 @@ document.addEventListener('DOMContentLoaded', function () {
       loader.style.display = 'none';
     }
   }
-
-  function onSuccess(message) {
-    iziToast.show({
-      message,
-      backgroundColor: '#EF4040',
-      progressBarColor: '#FFE0AC',
-      icon: 'icon-close',
-      ...toastOptions,
-    });
-  }
-
-  function onError(message) {
-    iziToast.show({
-      message,
-      backgroundColor: '#59A10D',
-      progressBarColor: '#B5EA7C',
-      icon: 'icon-check',
-      ...toastOptions,
-    });
-  }
-  loadMoreBtn.addEventListener('click', loadMoreImages);
 
   async function loadMoreImages() {
     page++;
@@ -197,5 +168,24 @@ document.addEventListener('DOMContentLoaded', function () {
     } finally {
       loader.style.display = 'none';
     }
+  }
+  function onSuccess(message) {
+    iziToast.show({
+      message,
+      backgroundColor: '#EF4040',
+      progressBarColor: '#FFE0AC',
+      icon: 'icon-close',
+      ...toastOptions,
+    });
+  }
+
+  function onError(message) {
+    iziToast.show({
+      message,
+      backgroundColor: '#59A10D',
+      progressBarColor: '#B5EA7C',
+      icon: 'icon-check',
+      ...toastOptions,
+    });
   }
 });
