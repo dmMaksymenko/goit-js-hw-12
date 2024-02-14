@@ -74,7 +74,6 @@ document.addEventListener('DOMContentLoaded', function () {
       }
       return response.data;
     } catch (error) {
-      // onError(`'Error fetching images:', ${error}`);
       throw new Error(`Error fetching images: ${error.message}`);
     }
   }
@@ -137,6 +136,7 @@ document.addEventListener('DOMContentLoaded', function () {
           'Sorry, there are no images matching your search query. Please try again!',
       });
       loadMoreBtn.style.display = 'none';
+      galleryMarkup.innerHTML = '';
       return;
     }
     const markup = imgsTemplate(images);
