@@ -1,9 +1,7 @@
 ('use strict');
 import axios from 'axios';
-
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
-
 import iziToast from 'izitoast';
 import 'izitoast/dist/css/iziToast.min.css';
 
@@ -27,17 +25,27 @@ document.addEventListener('DOMContentLoaded', function () {
 
   searchForm.addEventListener('submit', async function (e) {
     e.preventDefault();
-    const query = e.target.elements.query.value.trim();
+    query = e.target.elements.query.value.trim();
     if (query === '') {
       return;
     }
+
+    searchForm.reset();
+    page = 1;
+    galleryMarkup.innerHTML = '';
     try {
-      const data = await getImage(query, 1);
+      console.log('Fetching images...');
+      const { data, maxPage } = await getImage(query, 1);
+      console.log('Images fetched.');
+      console.log('Data received:', data);
+      console.log('Max page:', maxPage);
+      totalResult = data.totalHits;
+      console.log('Total result:', totalResult);
       loader.style.display = 'none';
       renderImgs(data.hits);
       submitBtn.disabled = true;
-      totalResult = data.total;
-      checkBtnStatus();
+      checkBtnStatus(maxPage, page);
+      console.log('Checking button status...');
 
       gallery = new SimpleLightbox(`.${GALLERY_LINK}`, {
         captionsData: 'alt',
@@ -46,8 +54,10 @@ document.addEventListener('DOMContentLoaded', function () {
       gallery.refresh();
       gallery.on('show.simplelightbox');
     } catch (error) {
+      console.error('Error fetching images:', error);
       loader.style.display = 'none';
       onError(`Error fetching images: ${error}`);
+      submitBtn.disabled = false;
     } finally {
       e.target.elements.query.value = '';
     }
@@ -68,24 +78,32 @@ document.addEventListener('DOMContentLoaded', function () {
     const url = BASE_URL + Params;
 
     try {
-      const response = await axios.get(url);
+      const response = await axios.get(url, {
+        params: { ...searchParams },
+      });
       if (!response.data) {
         throw new Error('No data returned from the API');
       }
-      return response.data;
+      const data = response.data;
+      const maxPage = Math.ceil(data.totalHits / searchParams.get('per_page'));
+      console.log(data);
+      console.log(maxPage);
+      console.log(data.hits.length);
+      return { data, maxPage, page };
     } catch (error) {
       throw new Error(`Error fetching images: ${error.message}`);
     }
   }
 
-  function checkBtnStatus() {
+  function checkBtnStatus(maxPage, page) {
+    console.log('Max page:', maxPage);
+    console.log('Page:', page);
     if (totalResult === 0) {
       loadMoreBtn.style.display = 'none';
       return;
     }
-    const maxPage = Math.ceil(totalResult / 15);
-    const isLastPage = maxPage === page;
-    if (isLastPage) {
+    const isLastPage = page <= maxPage;
+    if (!isLastPage) {
       loadMoreBtn.style.display = 'none';
       iziToast.show({
         message: "We're sorry, but you've reached the end of search results.",
@@ -139,6 +157,7 @@ document.addEventListener('DOMContentLoaded', function () {
       galleryMarkup.innerHTML = '';
       return;
     }
+
     const markup = imgsTemplate(images);
     try {
       galleryMarkup.insertAdjacentHTML('beforeend', markup);
@@ -149,12 +168,31 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   async function loadMoreImages() {
+    console.log('Loading more images...');
     page++;
     loader.style.display = 'block';
     try {
-      const data = await getImage(query, page);
+      const { data, maxPage } = await getImage(query, page);
+      console.log('More images loaded.');
+      console.log('Data received:', data);
+      console.log('Max page:', maxPage);
       renderImgs(data.hits);
-      checkBtnStatus();
+
+      console.log('Page:', page);
+      console.log('Total hits:', data.totalHits);
+
+      if (page >= maxPage || data.totalHits < 15) {
+        loadMoreBtn.style.display = 'none';
+        console.log('Reached last page.');
+        iziToast.show({
+          message: "We're sorry, but you've reached the end of search results.",
+          color: 'red',
+          position: 'topRight',
+        });
+      } else {
+        checkBtnStatus(maxPage, page);
+        console.log('Checking button status...');
+      }
       const imageElements = document.querySelectorAll('.gallery-link');
       const imageHeight =
         imageElements.length > 0 ? imageElements[0].offsetHeight : 0;
@@ -164,19 +202,11 @@ document.addEventListener('DOMContentLoaded', function () {
         top: scrollHeight,
       });
     } catch (error) {
+      console.error('Error fetching more images:', error);
       onError(`Error fetching more images: ${error}`);
     } finally {
       loader.style.display = 'none';
     }
-  }
-  function onSuccess(message) {
-    iziToast.show({
-      message,
-      backgroundColor: '#EF4040',
-      progressBarColor: '#FFE0AC',
-      icon: 'icon-close',
-      ...toastOptions,
-    });
   }
 
   function onError(message) {
@@ -185,7 +215,6 @@ document.addEventListener('DOMContentLoaded', function () {
       backgroundColor: '#59A10D',
       progressBarColor: '#B5EA7C',
       icon: 'icon-check',
-      ...toastOptions,
     });
   }
 });
