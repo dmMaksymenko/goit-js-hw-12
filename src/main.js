@@ -34,18 +34,13 @@ document.addEventListener('DOMContentLoaded', function () {
     page = 1;
     galleryMarkup.innerHTML = '';
     try {
-      console.log('Fetching images...');
-      const { data, maxPage } = await getImage(query, 1);
-      console.log('Images fetched.');
-      console.log('Data received:', data);
-      console.log('Max page:', maxPage);
+      const { data } = await getImage(query, 1);
       totalResult = data.totalHits;
-      console.log('Total result:', totalResult);
       loader.style.display = 'none';
       renderImgs(data.hits);
       submitBtn.disabled = true;
-      checkBtnStatus(maxPage, page);
-      console.log('Checking button status...');
+      const maxPage = Math.ceil(totalResult / 15);
+      checkBtnStatus(maxPage);
 
       gallery = new SimpleLightbox(`.${GALLERY_LINK}`, {
         captionsData: 'alt',
@@ -62,7 +57,7 @@ document.addEventListener('DOMContentLoaded', function () {
       e.target.elements.query.value = '';
     }
   });
-  async function getImage(query, page = 1) {
+  async function getImage(query, page = 1, maxPage) {
     const BASE_URL = 'https://pixabay.com/api/';
 
     const searchParams = new URLSearchParams({
@@ -85,25 +80,15 @@ document.addEventListener('DOMContentLoaded', function () {
         throw new Error('No data returned from the API');
       }
       const data = response.data;
-      const maxPage = Math.ceil(data.totalHits / searchParams.get('per_page'));
-      console.log(data);
-      console.log(maxPage);
-      console.log(data.hits.length);
+
       return { data, maxPage, page };
     } catch (error) {
       throw new Error(`Error fetching images: ${error.message}`);
     }
   }
 
-  function checkBtnStatus(maxPage, page) {
-    console.log('Max page:', maxPage);
-    console.log('Page:', page);
-    if (totalResult === 0) {
-      loadMoreBtn.style.display = 'none';
-      return;
-    }
-    const isLastPage = page <= maxPage;
-    if (!isLastPage) {
+  function checkBtnStatus(maxPage) {
+    if (totalResult === 0 || page >= maxPage) {
       loadMoreBtn.style.display = 'none';
       iziToast.show({
         message: "We're sorry, but you've reached the end of search results.",
@@ -168,31 +153,13 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   async function loadMoreImages() {
-    console.log('Loading more images...');
     page++;
     loader.style.display = 'block';
     try {
-      const { data, maxPage } = await getImage(query, page);
-      console.log('More images loaded.');
-      console.log('Data received:', data);
-      console.log('Max page:', maxPage);
+      const { data } = await getImage(query, page);
       renderImgs(data.hits);
-
-      console.log('Page:', page);
-      console.log('Total hits:', data.totalHits);
-
-      if (page >= maxPage || data.totalHits < 15) {
-        loadMoreBtn.style.display = 'none';
-        console.log('Reached last page.');
-        iziToast.show({
-          message: "We're sorry, but you've reached the end of search results.",
-          color: 'red',
-          position: 'topRight',
-        });
-      } else {
-        checkBtnStatus(maxPage, page);
-        console.log('Checking button status...');
-      }
+      const maxPage = Math.ceil(data.totalHits / 15);
+      checkBtnStatus(maxPage);
       const imageElements = document.querySelectorAll('.gallery-link');
       const imageHeight =
         imageElements.length > 0 ? imageElements[0].offsetHeight : 0;
