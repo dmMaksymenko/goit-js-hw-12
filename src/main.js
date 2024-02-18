@@ -12,11 +12,15 @@ document.addEventListener('DOMContentLoaded', function () {
   const loader = document.querySelector('.loader');
   const GALLERY_LINK = 'gallery-link';
   const loadMoreBtn = document.querySelector('.load-more-btn');
-  let gallery;
   submitBtn.disabled = true;
   let page = 1;
   let query = null;
   let totalResult = 0;
+
+  const gallery = new SimpleLightbox(`.${GALLERY_LINK}`, {
+    captionsData: 'alt',
+    captionDelay: 250,
+  });
 
   searchForm.elements.query.addEventListener('input', function () {
     query = this.value.trim();
@@ -42,10 +46,6 @@ document.addEventListener('DOMContentLoaded', function () {
       const maxPage = Math.ceil(totalResult / 15);
       checkBtnStatus(maxPage);
 
-      gallery = new SimpleLightbox(`.${GALLERY_LINK}`, {
-        captionsData: 'alt',
-        captionDelay: 250,
-      });
       gallery.refresh();
       gallery.on('show.simplelightbox');
     } catch (error) {
@@ -160,6 +160,7 @@ document.addEventListener('DOMContentLoaded', function () {
       renderImgs(data.hits);
       const maxPage = Math.ceil(data.totalHits / 15);
       checkBtnStatus(maxPage);
+      gallery.refresh();
       const imageElements = document.querySelectorAll('.gallery-link');
       const imageHeight =
         imageElements.length > 0 ? imageElements[0].offsetHeight : 0;
